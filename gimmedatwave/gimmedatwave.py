@@ -1,6 +1,7 @@
 import os
 from dataclasses import dataclass
 from enum import Enum
+from typing import Optional, Generator
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -54,7 +55,10 @@ class CAENHeader:
     event_counter: int
     trigger_time_tag: int
 
-    def display(self):
+    def display(self) -> None:
+        """
+        Prints the header data to the console.
+        """
         print(f"Event size: {self.event_size}")
         print(f"Board ID: {self.board_id}")
         print(f"Pattern: {self.pattern}")
@@ -69,12 +73,24 @@ class CAENEvent:
     record: np.ndarray
     id: int = 0
 
-    def display(self):
+    def display(self) -> None:
+        """
+        Plots the event's record data.
+        """
         plt.plot(self.record)
         plt.show()
 
 
 class Parser():
+    """
+    The parser for CAEN WaveDump files. Create a parser object and then use one of the methods
+    to read the data.
+    Usage: 
+    import gimmedatwave as gdw
+    parser = gdw.Parser("wave_1.dat", gdw.DigitizerFamily.X742)
+    event = parser.get_event(0)
+    event.display()
+    """
 
     def __init__(self, file, digitizer_family, record_length=None, record_dtype=None):
         if not os.path.isfile(file):
@@ -98,7 +114,20 @@ class Parser():
     def _get_entries(self):
         return int(os.path.getsize(self.file) / self.dtype.itemsize)
 
-    def get_event(self, index):
+    def get_event(self, index: int) -> CAENEvent:
+        """Get a single event from the binary file.
+        The file pointer is incremented by the size of the event as defined by the DigitizerFamily.
+        Usage: get_event(0) gets the first event in the file.
+
+        Args:
+            index (int): The event number to get.
+
+        Raises:
+            IndexError: Raised if the index is beyond the end of the file.
+
+        Returns:
+            CAENEvent: The event at the specified index.
+        """
         unpacked = np.fromfile(self.file, dtype=self.dtype, count=1,
                                offset=index * self.dtype.itemsize)
         try:
@@ -106,7 +135,17 @@ class Parser():
         except IndexError:
             raise IndexError(f"Index {index} beyond end of file")
 
-    def get_all_events(self, start=0):
+    def get_all_events(self, start: int = 0) -> list[CAENEvent]:
+        """Gets all events in a file and returns as a list of CAENEvents.
+        Not recommended for large files since it will load the entire file into memory.
+        Usage: get_all_events(start=51) gets all events starting at the 50th event.
+
+        Args:
+            start (int, optional): The event to start reading from. Defaults to 0.
+
+        Returns:
+            list[CAENEvent]: The list of CAENEvents.
+        """
         unpacked = np.fromfile(
             self.file, dtype=self.dtype, count=-1, offset=start)
         events = []
@@ -115,7 +154,21 @@ class Parser():
                 *event['header']), event['record']), i)
         return events
 
-    def read_dat(self, start=0, stop=None, step=1):
+    def read_dat(self, start: int = 0, stop: Optional[int] = None, step: int = 1) -> Generator[CAENEvent, None, None]:
+        """Generator that yields CAENEvents from a binary file.
+        Usage: for event in read_dat(start=5, step=100): event.display()
+
+        Args:
+            start (int, optional): The event number to begin reading from. Defaults to 0.
+            stop (Optional[int], optional): The event number to stop reading at. Defaults to None.
+            step (int, optional): How many events to step each iteration. Defaults to 1.
+
+        Raises:
+            IndexError: Raised if the index is beyond the end of the file.
+
+        Yields:
+            Generator[CAENEvent, None, None]: The generator expression that yields CAENEvents.
+        """
         index = start
         if stop is not None and stop > self.n_entries:
             raise IndexError(
@@ -127,17 +180,17 @@ class Parser():
                 yield CAENEvent(CAENHeader(*unpacked['header'][0]), unpacked['record'][0], index)
                 index += step
 
-    def read_next(self):
+    def read_next(self) -> CAENEvent:
+        """Read the next event from the current position in the file.
+
+        Raises:
+            IndexError: Raised if the index is beyond the end of the file.
+
+        Returns:
+            CAENEvent: The CAENEvent at the next position in the file.
+        """
         if self.cur_idx >= self.n_entries:
             raise IndexError(f"Index {self.cur_idx} beyond end of file")
         event = self.get_event(self.cur_idx)
         self.cur_idx += 1
         return event
-
-
-if __name__ == "__main__":
-    parser = Parser("wave_20.dat", DigitizerFamily.X742)
-    events = []
-    for event in parser.read_dat(start=5, step=100):
-        events.append(event)
-    breakpoint()
