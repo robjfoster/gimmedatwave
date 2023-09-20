@@ -177,7 +177,7 @@ class Parser():
             IndexError: Raised if the index is beyond the end of the file.
 
         Yields:
-            Generator[CAENEvent, None, None]: The generator expression that yields CAENEvents.
+            CAENEvent: The CAENEvent at the current index.
         """
         index = start
         if stop is not None and stop > self.n_entries:
