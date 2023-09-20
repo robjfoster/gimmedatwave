@@ -92,7 +92,12 @@ class Parser():
     event.display()
     """
 
-    def __init__(self, file, digitizer_family, record_length=None, record_dtype=None):
+    def __init__(self,
+                 file: str,
+                 digitizer_family: DigitizerFamily,
+                 record_length: Optional[int] = None,
+                 record_dtype: Optional[np.dtype] = None
+                 ) -> None:
         if not os.path.isfile(file):
             raise FileNotFoundError(f"File {file} not found")
         self.file = file
@@ -108,10 +113,15 @@ class Parser():
         self.n_entries = self._get_entries()
         self.cur_idx = 0
 
-    def _create_dtype(self, header_size, header_dtype, record_size, record_dtype):
+    def _create_dtype(self,
+                      header_size: int,
+                      header_dtype: np.dtype,
+                      record_size: int,
+                      record_dtype: np.dtype
+                      ) -> np.dtype:
         return np.dtype([('header', header_dtype, header_size), ('record', record_dtype, record_size)])
 
-    def _get_entries(self):
+    def _get_entries(self) -> int:
         return int(os.path.getsize(self.file) / self.dtype.itemsize)
 
     def get_event(self, index: int) -> CAENEvent:
