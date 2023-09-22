@@ -148,7 +148,7 @@ class Parser():
     def get_all_events(self, start: int = 0) -> list[CAENEvent]:
         """Gets all events in a file and returns as a list of CAENEvents.
         Not recommended for large files since it will load the entire file into memory.
-        Usage: get_all_events(start=51) gets all events starting at the 50th event.
+        Usage: get_all_events(start=49) gets all events starting at the 50th event.
 
         Args:
             start (int, optional): The event to start reading from. Defaults to 0.
