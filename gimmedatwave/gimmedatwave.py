@@ -35,7 +35,7 @@ _DIGITIZER_FAMILY_RECORD_LENGTH_MAP = {
     DigitizerFamily.X742: 1024,
     DigitizerFamily.X740: 1024,
     DigitizerFamily.X730: 1024,
-    DigitizerFamily.X725: 1024
+    DigitizerFamily.X725: 1030
 }
 
 _DIGITIZER_FAMILY_RECORD_DTYPE_MAP = {
