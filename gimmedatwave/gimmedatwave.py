@@ -161,7 +161,7 @@ class Parser():
         events = []
         for i, event in enumerate(unpacked):
             events.append(CAENEvent(CAENHeader(
-                *event['header']), event['record']), i)
+                *event['header']), event['record'], i))
         return events
 
     def read_dat(self, start: int = 0, stop: Optional[int] = None, step: int = 1) -> Generator[CAENEvent, None, None]:
