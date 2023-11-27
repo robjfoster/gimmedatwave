@@ -31,6 +31,7 @@ _DIGITIZER_FAMILY_HEADER_DTYPE_MAP = {
     DigitizerFamily.X725: HEADER_DTYPE
 }
 
+# The record length is now calculated automatically.
 _DIGITIZER_FAMILY_RECORD_LENGTH_MAP = {
     DigitizerFamily.X742: 1024,
     DigitizerFamily.X740: 1024,
@@ -102,16 +103,23 @@ class Parser():
             raise FileNotFoundError(f"File {file} not found")
         self.file = file
         self.digitizer_family = digitizer_family
-        self.record_length = record_length or _DIGITIZER_FAMILY_RECORD_LENGTH_MAP[
-            digitizer_family]
         self.record_dtype = record_dtype or _DIGITIZER_FAMILY_RECORD_DTYPE_MAP[
             digitizer_family]
         self.header_length = _DIGITIZER_FAMILY_HEADER_LENGTH_MAP[digitizer_family]
         self.header_dtype = _DIGITIZER_FAMILY_HEADER_DTYPE_MAP[digitizer_family]
+        self.record_length = record_length or self._calc_record_length()
         self.dtype = self._create_dtype(
             self.header_length, self.header_dtype, self.record_length, self.record_dtype)
         self.n_entries = self._get_entries()
         self.cur_idx = 0
+
+    def _calc_record_length(self) -> int:
+        # Read the header from the first event in the file
+        header = np.fromfile(
+            self.file, dtype=self.header_dtype, count=self.header_length)
+        record_length = int((header[0] - (self.header_length *
+                                          self.header_dtype().itemsize)) / (self.record_dtype().itemsize))
+        return record_length
 
     def _create_dtype(self,
                       header_size: int,
