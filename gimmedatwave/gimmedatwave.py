@@ -1,7 +1,7 @@
 import os
 from dataclasses import dataclass
 from enum import Enum
-from typing import Optional, Generator
+from typing import Optional, Generator, List
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -46,6 +46,13 @@ _DIGITIZER_FAMILY_RECORD_DTYPE_MAP = {
     DigitizerFamily.X725: np.uint16
 }
 
+_DIGITIZER_FAMILY_SAMPLE_RATE_MAP = {
+    DigitizerFamily.X742: 5000,
+    DigitizerFamily.X740: 62.5,
+    DigitizerFamily.X730: 500,
+    DigitizerFamily.X725: 250
+}
+
 
 @dataclass
 class CAENHeader:
@@ -72,13 +79,14 @@ class CAENHeader:
 class CAENEvent:
     header: CAENHeader
     record: np.ndarray
+    sample_times: np.ndarray
     id: int = 0
 
     def display(self) -> None:
         """
         Plots the event's record data.
         """
-        plt.plot(self.record)
+        plt.plot(self.sample_times, self.record)
         plt.show()
 
 
@@ -97,7 +105,8 @@ class Parser():
                  file: str,
                  digitizer_family: DigitizerFamily,
                  record_length: Optional[int] = None,
-                 record_dtype: Optional[np.dtype] = None
+                 record_dtype: Optional[np.dtype] = None,
+                 sample_rate: Optional[float] = None
                  ) -> None:
         if not os.path.isfile(file):
             raise FileNotFoundError(f"File {file} not found")
@@ -108,6 +117,9 @@ class Parser():
         self.header_length = _DIGITIZER_FAMILY_HEADER_LENGTH_MAP[digitizer_family]
         self.header_dtype = _DIGITIZER_FAMILY_HEADER_DTYPE_MAP[digitizer_family]
         self.record_length = record_length or self._calc_record_length()
+        self.sample_rate = sample_rate or _DIGITIZER_FAMILY_SAMPLE_RATE_MAP[digitizer_family]
+        self.sample_times = np.arange(
+            self.record_length) / self.sample_rate * 1e6
         self.dtype = self._create_dtype(
             self.header_length, self.header_dtype, self.record_length, self.record_dtype)
         self.n_entries = self._get_entries()
@@ -149,11 +161,11 @@ class Parser():
         unpacked = np.fromfile(self.file, dtype=self.dtype, count=1,
                                offset=index * self.dtype.itemsize)
         try:
-            return CAENEvent(CAENHeader(*unpacked['header'][0]), unpacked['record'][0], index)
+            return CAENEvent(CAENHeader(*unpacked['header'][0]), unpacked['record'][0], self.sample_times, index)
         except IndexError:
             raise IndexError(f"Index {index} beyond end of file")
 
-    def get_all_events(self, start: int = 0) -> list[CAENEvent]:
+    def get_all_events(self, start: int = 0) -> List[CAENEvent]:
         """Gets all events in a file and returns as a list of CAENEvents.
         Not recommended for large files since it will load the entire file into memory.
         Usage: get_all_events(start=49) gets all events starting at the 50th event.
@@ -169,7 +181,7 @@ class Parser():
         events = []
         for i, event in enumerate(unpacked):
             events.append(CAENEvent(CAENHeader(
-                *event['header']), event['record'], i))
+                *event['header']), event['record'], self.sample_times, i))
         return events
 
     def read_dat(self, start: int = 0, stop: Optional[int] = None, step: int = 1) -> Generator[CAENEvent, None, None]:
@@ -195,7 +207,7 @@ class Parser():
         with open(self.file, 'rb') as f:
             while index < end:
                 unpacked = np.fromfile(f, dtype=self.dtype, count=1)
-                yield CAENEvent(CAENHeader(*unpacked['header'][0]), unpacked['record'][0], index)
+                yield CAENEvent(CAENHeader(*unpacked['header'][0]), unpacked['record'][0], self.sample_times, index)
                 index += step
 
     def read_next(self) -> CAENEvent:
