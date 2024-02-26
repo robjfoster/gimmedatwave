@@ -1,1 +1,1 @@
-from .gimmedatwave import Parser, CAENHeader, CAENEvent
+from .gimmedatwave import Parser, CAENHeader, CAENEvent, DigitizerFamily
