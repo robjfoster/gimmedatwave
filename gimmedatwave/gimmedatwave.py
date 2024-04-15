@@ -15,20 +15,23 @@ class DigitizerFamily(Enum):
     X740 = 2
     X730 = 3
     X725 = 4
+    X751 = 5
 
 
 _DIGITIZER_FAMILY_HEADER_LENGTH_MAP = {
-    DigitizerFamily.X742: HEADER_SIZE,
+    DigitizerFamily.X742: HEADER_SIZE+2,
     DigitizerFamily.X740: HEADER_SIZE,
     DigitizerFamily.X730: HEADER_SIZE,
-    DigitizerFamily.X725: HEADER_SIZE
+    DigitizerFamily.X725: HEADER_SIZE,
+    DigitizerFamily.X751: HEADER_SIZE
 }
 
 _DIGITIZER_FAMILY_HEADER_DTYPE_MAP = {
     DigitizerFamily.X742: HEADER_DTYPE,
     DigitizerFamily.X740: HEADER_DTYPE,
     DigitizerFamily.X730: HEADER_DTYPE,
-    DigitizerFamily.X725: HEADER_DTYPE
+    DigitizerFamily.X725: HEADER_DTYPE,
+    DigitizerFamily.X751: HEADER_DTYPE
 }
 
 # The record length is now calculated automatically.
@@ -36,21 +39,24 @@ _DIGITIZER_FAMILY_RECORD_LENGTH_MAP = {
     DigitizerFamily.X742: 1024,
     DigitizerFamily.X740: 1024,
     DigitizerFamily.X730: 1024,
-    DigitizerFamily.X725: 1030
+    DigitizerFamily.X725: 1030,
+    DigitizerFamily.X751: 1024
 }
 
 _DIGITIZER_FAMILY_RECORD_DTYPE_MAP = {
     DigitizerFamily.X742: np.float32,
     DigitizerFamily.X740: np.uint16,
     DigitizerFamily.X730: np.uint16,
-    DigitizerFamily.X725: np.uint16
+    DigitizerFamily.X725: np.uint16,
+    DigitizerFamily.X751: np.uint16
 }
 
 _DIGITIZER_FAMILY_SAMPLE_RATE_MAP = {
     DigitizerFamily.X742: 5000,
     DigitizerFamily.X740: 62.5,
     DigitizerFamily.X730: 500,
-    DigitizerFamily.X725: 250
+    DigitizerFamily.X725: 250,
+    DigitizerFamily.X751: 1000
 }
 
 
@@ -78,7 +84,7 @@ class CAENHeader:
 @dataclass
 class CAENEvent:
     header: CAENHeader
-    record: np.ndarray
+    record: np.ndarray # Waveform data of this Event
     sample_times: np.ndarray
     id: int = 0
 
