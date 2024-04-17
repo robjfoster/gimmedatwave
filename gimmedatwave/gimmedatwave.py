@@ -68,8 +68,8 @@ class CAENHeader:
     channel_mask: int
     event_counter: int
     trigger_time_tag: int
-    DC_offset:int = None
-    Start_Index_Cell:int = None
+    dc_offset:int = None
+    start_index_cell:int = None
 
     def display(self) -> None:
         """
